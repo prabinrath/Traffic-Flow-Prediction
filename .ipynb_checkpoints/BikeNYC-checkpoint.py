@@ -65,7 +65,7 @@ def get_bikenyc_data(flow_data,n_closeness,n_period,n_trend,tt_split,g_closeness
     x_period_test = x_period_test.reshape(n_test,-1,map_height,map_width)
     x_trend_test = x_trend_test.reshape(n_test,-1,map_height,map_width)
     
-    return tstamp_train, x_closeness_train, x_period_train, x_trend_train, y_train, x_closeness_test, x_period_test, x_trend_test, y_test
+    return tstamp_train, x_closeness_train, x_period_train, x_trend_train, y_train, x_closeness_test, x_period_test, x_trend_test, y_test, mmn
 
 import torch
 from torch.utils.data import Dataset
@@ -75,15 +75,15 @@ class BikeNYCDataset(Dataset):
     def __init__(self,path,n_closeness,n_period,n_trend,tt_split,train=True):
         self.flow_data = np.load(path)            
         if train:
-            _, self.x_c, self.x_p, self.x_t, self.y, _, _, _, _ = get_bikenyc_data(self.flow_data,n_closeness,n_period,n_trend,tt_split)
+            _, self.x_c, self.x_p, self.x_t, self.y, _, _, _, _, self.mmn = get_bikenyc_data(self.flow_data,n_closeness,n_period,n_trend,tt_split)
         else:
-            _, _, _, _, _, self.x_c, self.x_p, self.x_t, self.y = get_bikenyc_data(self.flow_data,n_closeness,n_period,n_trend,tt_split)
+            _, _, _, _, _, self.x_c, self.x_p, self.x_t, self.y, self.mmn = get_bikenyc_data(self.flow_data,n_closeness,n_period,n_trend,tt_split)
         self.dataset_len = self.y.shape[0]
         self.y = torch.tensor(self.y, device=torch.device(device)).float()
         self.x_c = torch.tensor(self.x_c, device=torch.device(device)).float()
         self.x_p = torch.tensor(self.x_p, device=torch.device(device)).float()
         self.x_t = torch.tensor(self.x_t, device=torch.device(device)).float()
-        # print(self.x_c.shape, self.x_p.shape, self.x_t.shape) 
+        print(self.x_c.shape, self.x_p.shape, self.x_t.shape) 
 
     def __len__(self):
         return self.dataset_len
