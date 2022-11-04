@@ -73,11 +73,11 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class BikeNYCDataset(Dataset):
     def __init__(self,path,n_closeness,n_period,n_trend,tt_split,train=True):
-        self.flow_data = np.load(path)            
+        flow_data = np.load(path+'flow_data.npy')            
         if train:
-            _, self.x_c, self.x_p, self.x_t, self.y, _, _, _, _, self.mmn = get_bikenyc_data(self.flow_data,n_closeness,n_period,n_trend,tt_split)
+            _, self.x_c, self.x_p, self.x_t, self.y, _, _, _, _, self.mmn = get_bikenyc_data(flow_data,n_closeness,n_period,n_trend,tt_split)
         else:
-            _, _, _, _, _, self.x_c, self.x_p, self.x_t, self.y, self.mmn = get_bikenyc_data(self.flow_data,n_closeness,n_period,n_trend,tt_split)
+            _, _, _, _, _, self.x_c, self.x_p, self.x_t, self.y, self.mmn = get_bikenyc_data(flow_data,n_closeness,n_period,n_trend,tt_split)
         self.dataset_len = self.y.shape[0]
         self.y = torch.tensor(self.y, device=torch.device(device)).float()
         self.x_c = torch.tensor(self.x_c, device=torch.device(device)).float()
@@ -90,4 +90,3 @@ class BikeNYCDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.x_c[idx], self.x_p[idx], self.x_t[idx], self.y[idx]
-
