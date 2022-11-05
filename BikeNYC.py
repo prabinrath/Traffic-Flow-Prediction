@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import numpy as np
-from utils.minmax_normalizer import MinMaxNormalization
+from Utils.minmax_normalizer import MinMaxNormalization
 
 def get_bikenyc_data(flow_data,n_closeness,n_period,n_trend,tt_split,g_closeness=1,g_period=24,g_trend=24*7):
     data_len, feature, map_height, map_width = flow_data.shape

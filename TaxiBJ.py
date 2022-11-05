@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 import matplotlib.pyplot as plt
-from utils.minmax_normalizer import MinMaxNormalization
+from Utils.minmax_normalizer import MinMaxNormalization, MinMaxNormalization_01
 import time
 
 def get_taxibj_data(flow_data,ext_data,n_closeness,n_period,n_trend,tt_split,g_closeness=1,g_period=24*2,g_trend=24*2*7):
@@ -12,8 +12,6 @@ def get_taxibj_data(flow_data,ext_data,n_closeness,n_period,n_trend,tt_split,g_c
     total_samples = data_len-start_idx
     n_train = int(total_samples*tt_split)
     n_test = total_samples-n_train
-    mmn = MinMaxNormalization()
-    flow_data = mmn.fit_transform(flow_data)
     
     tstamp_train = np.zeros(n_train)
     y_train = np.zeros((n_train,2,map_height,map_width))
@@ -72,7 +70,8 @@ def get_taxibj_data(flow_data,ext_data,n_closeness,n_period,n_trend,tt_split,g_c
     x_period_test = x_period_test.reshape(n_test,-1,map_height,map_width)
     x_trend_test = x_trend_test.reshape(n_test,-1,map_height,map_width)
     
-    return tstamp_train, x_closeness_train, x_period_train, x_trend_train, x_ext_train, y_train, x_closeness_test, x_period_test, x_trend_test, x_ext_test, y_test
+    return tstamp_train, x_closeness_train, x_period_train, x_trend_train, x_ext_train, y_train, \
+           x_closeness_test, x_period_test, x_trend_test, x_ext_test, y_test
 
 import torch
 from torch.utils.data import Dataset
@@ -89,7 +88,30 @@ class TaxiBJDataset(Dataset):
         ext2013 = np.load(path+'TaxiBJext2013.npy')
         ext2014 = np.load(path+'TaxiBJext2014.npy')
         ext2015 = np.load(path+'TaxiBJext2015.npy')
-        ext2016 = np.load(path+'TaxiBJext2016.npy')            
+        ext2016 = np.load(path+'TaxiBJext2016.npy')
+        
+        self.mmn_flow = MinMaxNormalization()
+        self.mmn_flow.fit(np.vstack((flow2013, flow2014, flow2015, flow2016)))
+        self.mmn_temp = MinMaxNormalization_01()
+        self.mmn_temp.fit(np.hstack((ext2013[:,8], ext2014[:,8], ext2015[:,8], ext2016[:,8])))
+        self.mmn_wind = MinMaxNormalization_01()
+        self.mmn_wind.fit(np.hstack((ext2013[:,9], ext2014[:,9], ext2015[:,9], ext2016[:,9])))
+        
+        flow2013 = self.mmn_flow.transform(flow2013)
+        flow2014 = self.mmn_flow.transform(flow2014)
+        flow2015 = self.mmn_flow.transform(flow2015)
+        flow2016 = self.mmn_flow.transform(flow2016)
+        
+        ext2013[:,8] = self.mmn_temp.transform(ext2013[:,8])[:]
+        ext2014[:,8] = self.mmn_temp.transform(ext2014[:,8])[:]
+        ext2015[:,8] = self.mmn_temp.transform(ext2015[:,8])[:]
+        ext2016[:,8] = self.mmn_temp.transform(ext2016[:,8])[:]
+        
+        ext2013[:,9] = self.mmn_wind.transform(ext2013[:,9])[:]
+        ext2014[:,9] = self.mmn_wind.transform(ext2014[:,9])[:]
+        ext2015[:,9] = self.mmn_wind.transform(ext2015[:,9])[:]
+        ext2016[:,9] = self.mmn_wind.transform(ext2016[:,9])[:]
+        
         if train:
             _, self.x_c, self.x_p, self.x_t, self.x_e, self.y, _, _, _, _, _ = get_taxibj_data(flow2013,ext2013,n_closeness,n_period,n_trend,tt_split)
             _, x_c_, x_p_, x_t_, x_e_, y_, _, _, _, _, _ = get_taxibj_data(flow2014,ext2014,n_closeness,n_period,n_trend,tt_split)    
@@ -127,3 +149,4 @@ class TaxiBJDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.x_c[idx], self.x_p[idx], self.x_t[idx], self.x_e[idx], self.y[idx]
+    
